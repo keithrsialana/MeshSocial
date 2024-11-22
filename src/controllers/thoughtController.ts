@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Thought from "../models/Thought.js";
+import { User } from "../models/index.js";
 
 // Get all thoughts
 export const getThoughts = async (_req: Request, res: Response) => {
@@ -44,9 +45,20 @@ export const getSingleThoughtReactions = async (req: Request, res: Response) => 
 // Create a new thought
 export const createThought = async (req: Request, res: Response) => {
     try {
+        let user:any = await User.findOne({ _id: req.body.userId });
+        if (!user) {
+            res.status(404).json({ message: "User not found" });
+        }
+
+        // create new thought object
         const {thoughtText, username} = req.body;
         const newObj = {thoughtText, username};
         const dbThoughtData = await Thought.create(newObj);
+
+        // save thought id in user's list of thoughts
+        user.thoughts = [...user.thoughts, dbThoughtData._id];
+        await user.save(); // update new user changes
+
         res.json(dbThoughtData);
     } catch (err) {
         res.status(500).json(err);
@@ -133,13 +145,6 @@ export const deleteReaction = async (req: Request, res: Response) => {
 
         if (!thought) {
             res.status(404).json({ message: "No thought with that ID" });
-            return;
-        }
-
-        // Check if the reaction was actually removed
-        const reactionExists = thought.reactions.id(reactionId);
-        if (reactionExists) {
-            res.status(404).json({ message: "No reaction with that ID" });
             return;
         }
 
