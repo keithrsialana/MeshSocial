@@ -45,9 +45,10 @@ export const getSingleThoughtReactions = async (req: Request, res: Response) => 
 // Create a new thought
 export const createThought = async (req: Request, res: Response) => {
     try {
-        let user:any = await User.findOne({ _id: req.body.userId });
+        let user:any = await User.findOne({ username: req.body.username });
         if (!user) {
             res.status(404).json({ message: "User not found" });
+            return;
         }
 
         // create new thought object
@@ -148,7 +149,7 @@ export const deleteReaction = async (req: Request, res: Response) => {
             return;
         }
 
-        res.json({ message: "Reaction deleted successfully", thought }); // Return success message and updated thought
+        res.json({ message: "Reaction deleted successfully"}); // Return success message and updated thought
     } catch (error) {
         res.status(500).json({ message: "Error deleting reaction:", error });
     }

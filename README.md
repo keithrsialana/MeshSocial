@@ -30,6 +30,8 @@ By working on this API, developers gain insights into backend development workfl
 
 ## Usage  
 This API is designed for local testing and can be accessed through tools like **Insomnia** or **Postman**. Developers can leverage it as a backend foundation for building scalable social networking platforms.
+### Usage Demo
+[![Watch the demo](https://drive.google.com/file/d/1jLocOjMlXjlChaL8uH0CHJyYuCSC5iKl)](https://drive.google.com/file/d/1jLocOjMlXjlChaL8uH0CHJyYuCSC5iKl/view)
 
 ## Installation Instructions
 ### Prerequisites
