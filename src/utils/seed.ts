@@ -1,12 +1,12 @@
 import connection from "../config/connection.js";
-import { Reaction, Thought, User } from "../models/index.js";
-import { getRandomName, getRandomThoughts, getThoughtResponses } from "./data.js";
+import { Thought, User } from "../models/index.js";
+import { getRandomThoughts, getRandomUserName, makeEmail } from "./data.js";
 
 connection.on("error", (err) => err);
 
 connection.once("open", async () => {
 	console.log("connected");
-	// Delete the collections if they exist
+	// Delete the thought collections if they exist
 	let thoughtCheck = await connection.db
 		?.listCollections({ name: "thoughts" })
 		.toArray();
@@ -14,7 +14,7 @@ connection.once("open", async () => {
 		await connection.dropCollection("thoughts");
 	}
 
-    // Delete user collections if they exist
+	// Delete user collections if they exist
 	let userCheck = await connection.db
 		?.listCollections({ name: "users" })
 		.toArray();
@@ -22,38 +22,39 @@ connection.once("open", async () => {
 		await connection.dropCollection("users");
 	}
 
-    // Delete reaction collections if they exist
-	let reactionCheck = await connection.db
-    ?.listCollections({ name: "reactions" })
-    .toArray();
-if (reactionCheck?.length) {
-    await connection.dropCollection("reactions");
-}
-
-	const users = [];
-	const thoughts = getRandomThoughts(10);
-    const reactions = getThoughtResponses(10);
-
-	for (let i = 0; i < 20; i++) {
-		const fullName = getRandomName();
-		const first = fullName.split(" ")[0];
-		const last = fullName.split(" ")[1];
+	// Generate 10 user documents
+	let users = [];
+	for (let i = 0; i < 10; i++) {
+		const username = getRandomUserName();
+		const email = makeEmail(username);
 
 		users.push({
-			first,
-			last,
-			age: Math.floor(Math.random() * (99 - 18 + 1) + 18),
+			username,
+			email,
 		});
 	}
-
+	// Insert users into the database
 	await User.insertMany(users);
-	await Thought.insertMany(thoughts);
-    await Reaction.insertMany(reactions);
 
-	// loop through the saved videos, for each video we need to generate a video response and insert the video responses
-	console.table(users);
-	console.table(thoughts);
-    console.table(reactions);
+	let dbUsers = await User.find();
+	// Get a random user
+	// generate 20 thoughts 
+	let thoughts:any[] = [];
+	for (let i = 0; i < 20; i++) {
+		const randomUser = dbUsers[Math.floor(Math.random() * dbUsers.length)];
+		const ranNumthoughts = Math.floor(Math.random() * 5);
+		if (ranNumthoughts === 0 )
+			continue; 
+		const randUserThoughts = getRandomThoughts(ranNumthoughts, randomUser.username, dbUsers);
+		randUserThoughts.forEach(userThought => {
+			thoughts.push(userThought);
+		});
+	}
+	// Insert thoughts into the database
+	await Thought.insertMany(thoughts);
+
+	console.table(await connection.collection("users").find().toArray());
+	console.table(await connection.collection("thoughts").find().toArray());
 	console.info("Seeding complete! 🌱");
 	process.exit(0);
 });

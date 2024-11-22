@@ -1,4 +1,4 @@
-import { Schema, Document, model, Types } from "mongoose";
+import { Schema, Document, Types, model } from "mongoose";
 
 // Define the Reaction interface
 interface IReaction extends Document {
@@ -37,7 +37,6 @@ const reactionSchema = new Schema<IReaction>(
 	}
 );
 
-// Initialize the Reaction model
-const Reaction = model<IReaction>("Reaction", reactionSchema);
+const Reaction = model<IReaction>('Reaction', reactionSchema);
 
 export {Reaction, reactionSchema};
