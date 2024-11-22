@@ -40,4 +40,4 @@ const reactionSchema = new Schema<IReaction>(
 // Initialize the Reaction model
 const Reaction = model<IReaction>("Reaction", reactionSchema);
 
-export { Reaction, reactionSchema };
+export {Reaction, reactionSchema};
