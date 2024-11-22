@@ -1,3 +1,4 @@
+import { ObjectId } from "mongoose";
 import User from "../models/User.js";
 import { Request, Response } from "express";
 
@@ -24,10 +25,13 @@ export const getSingleUser = async (req: Request, res: Response) => {
 	}
 };
 
-// create a new user
+// Create a new user
 export const createUser = async (req: Request, res: Response) => {
+    // TODO: Make sure to figure out how to create while honoring unique constraints
 	try {
-		const dbUserData = await User.create(req.body);
+        const {username, email} = req.body;
+        const user = {username, email};
+		const dbUserData = await User.create(user);
 		res.json(dbUserData);
 	} catch (err) {
 		res.status(500).json(err);
@@ -37,9 +41,11 @@ export const createUser = async (req: Request, res: Response) => {
 // Update a user by ID
 export const updateUser  = async (req: Request, res: Response) => {
     try {
+        const {username, email} = req.body;
+        const updatedUser = {username, email};
         const user = await User.findOneAndUpdate(
             { _id: req.params.userId },
-            req.body,
+            updatedUser,
             { new: true, runValidators: true } // Return the updated document and run validators
         );
 
@@ -61,9 +67,52 @@ export const deleteUser  = async (req: Request, res: Response) => {
         if (!user) {
             res.status(404).json({ message: "No user with that ID" });
         } else {
-            res.json({ message: "User  deleted successfully" });
+            res.json({ message: "User deleted successfully" });
         }
     } catch (err) {
         res.status(500).json(err);
     }
 };
+
+// Add a friend id to user
+export const addFriend = async (req: Request, res: Response) => {
+    try {
+        let dbUser:any = await User.findOne({ _id: req.params.userId });
+        const friend = await User.findOne({ _id: req.params.friendId });
+        if (!dbUser) {
+            res.status(404).json({ message: "No user with that ID" });
+            return;
+        } else if (!friend) {
+            res.status(404).json({ message: "No friend with that ID" });
+            return;
+        } else {
+            dbUser.friends = [...dbUser.friends, friend._id];
+            await dbUser.save();
+        }
+        return res.json(dbUser);
+    } catch (error) {
+        res.status(500).json({message: "Error adding friend", error});
+        return;
+    }
+}
+
+// remove a friend id from user
+export const deleteFriend = async (req: Request, res: Response) => {
+    try {
+        let dbUser:any = await User.findOne({ _id: req.params.userId });
+        const friend = await User.findOne({ _id: req.params.friendId });
+        if (!dbUser) {
+            res.status(404).json({ message: "No user with that ID" });
+            return;
+        } else if (!friend) {
+            res.status(404).json({ message: "No friend with that ID" });
+            return;
+        } else {
+            dbUser.friends = dbUser.friends.filter((friend:ObjectId) => friend.toString() !== req.params.friendId);
+            await dbUser.save();
+        }
+        res.json(dbUser);
+    } catch (error) {
+        res.status(500).json({message: "Error adding friend", error});
+    }
+}
