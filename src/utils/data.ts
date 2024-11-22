@@ -139,7 +139,6 @@ const makeEmail = (username: string) => {
 	return `${username}@example.com`;
 };
 
-
 /**
  * Description
  * @param {number} int: The number of responses to generate

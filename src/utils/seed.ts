@@ -36,25 +36,70 @@ connection.once("open", async () => {
 	// Insert users into the database
 	await User.insertMany(users);
 
-	let dbUsers = await User.find();
+	const dbUsers = await User.find();
 	// Get a random user
-	// generate 20 thoughts 
-	let thoughts:any[] = [];
+	// generate 20 thoughts
+	let thoughts: any[] = [];
 	for (let i = 0; i < 20; i++) {
 		const randomUser = dbUsers[Math.floor(Math.random() * dbUsers.length)];
 		const ranNumthoughts = Math.floor(Math.random() * 5);
-		if (ranNumthoughts === 0 )
-			continue; 
-		const randUserThoughts = getRandomThoughts(ranNumthoughts, randomUser.username, dbUsers);
-		randUserThoughts.forEach(userThought => {
+		if (ranNumthoughts === 0) continue;
+		const randUserThoughts = getRandomThoughts(
+			ranNumthoughts,
+			randomUser.username,
+			dbUsers
+		);
+		randUserThoughts.forEach((userThought) => {
 			thoughts.push(userThought);
 		});
 	}
 	// Insert thoughts into the database
 	await Thought.insertMany(thoughts);
 
-	console.table(await connection.collection("users").find().toArray());
-	console.table(await connection.collection("thoughts").find().toArray());
+	let newDBUsers = dbUsers;
+
+	// Use Promise.all to handle asynchronous operations
+	await Promise.all(
+		newDBUsers.map(async (dbUser: any) => {
+			// Fetch thoughts associated with the user's username
+			const userThoughts = await Thought.find({ username: dbUser.username });
+
+			// Assign the ObjectIDs of the found thoughts to the user's thoughts array
+			dbUser.thoughts = userThoughts
+				.map((userThought) => {
+					if (!userThought._id) {
+						console.error("userThought does not have an _id:", userThought);
+						return null; // Handle the error appropriately
+					}
+					return userThought._id; // Return the ObjectId
+				})
+				.filter((id) => id !== null); // Filter out any null values if needed
+				
+			// array of friends
+			let friends = [];
+			for (let i = 0; i < (Math.floor(Math.random() * dbUsers.length)); i++) {
+				const randomIndex = Math.floor(Math.random() * dbUsers.length);
+				friends.push(dbUsers[randomIndex]._id);
+			}
+			dbUser.friends = friends;
+		})
+	);
+
+	// update users collection with new set of users
+	try {
+		// Drop the existing users collection
+		await User.collection.drop();
+		console.log("Existing users collection dropped.");
+
+		// Insert the new users into the collection
+		await User.insertMany(newDBUsers);
+		console.log("New users collection inserted.");
+	} catch (error) {
+		console.error("Error replacing users collection:", error);
+	}
+
+	console.log(JSON.stringify(await connection.collection("users").find().toArray()));
+	console.log(JSON.stringify(await connection.collection("thoughts").find().toArray()));
 	console.info("Seeding complete! 🌱");
 	process.exit(0);
 });
